@@ -16,14 +16,11 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
   const [joined, setJoined] = useState(false);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
-  const [commentText, setCommentText] = useState("");
-  const [commentStatus, setCommentStatus] = useState<string | null>(null);
   const [editableName, setEditableName] = useState(studentName);
 
   // Heartbeat tracking for instructor online check
   const [instructorActive, setInstructorActive] = useState(true);
   const [exitCountdown, setExitCountdown] = useState<number | null>(null);
-  const [comments, setComments] = useState<any[]>([]);
 
   useEffect(() => {
     setEditableName(studentName);
@@ -109,6 +106,7 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
         const dataPayload = {
           activeParticipationScore: Math.round(engagement),
           averageAttention: Math.round(attention),
+          confusion: Math.round(liveConfusion),
           lastActiveAt: serverTimestamp(),
           studentName: editableName,
           status: "present" as const,
@@ -590,23 +588,7 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
     return () => clearInterval(timer);
   }, [exitCountdown, sessionId, studentId]);
 
-  // Listen to comments
-  useEffect(() => {
-    if (!joined) return;
-    const unsub = onSnapshot(collection(db, "sessions", sessionId, "comments"), (snap) => {
-      const list: any[] = [];
-      snap.forEach(docSnap => {
-        list.push({ ...docSnap.data(), id: docSnap.id });
-      });
-      list.sort((a,b) => {
-        const aT = a.timestamp?.seconds || 0;
-        const bT = b.timestamp?.seconds || 0;
-        return aT - bT;
-      });
-      setComments(list);
-    });
-    return () => unsub();
-  }, [joined, sessionId]);
+
 
   // Clean up attendance status on window close or component unmount
   useEffect(() => {
@@ -665,26 +647,7 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
     }
   };
 
-  const handleSendComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
 
-    setCommentStatus("Submitting...");
-    try {
-      await addDoc(collection(db, "sessions", sessionId, "comments"), {
-        authorName: editableName,
-        text: commentText.trim(),
-        timestamp: serverTimestamp(),
-        role: "student"
-      });
-      setCommentText("");
-      setCommentStatus("Sent!");
-      setTimeout(() => setCommentStatus(null), 2000);
-    } catch (error) {
-      console.error("Error submitting query:", error);
-      setCommentStatus("Failed.");
-    }
-  };
 
   return (
     <div className="max-w-4xl mx-auto p-4 bg-gray-50 min-h-screen text-left font-sans text-gray-800">
@@ -848,54 +811,7 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
               </div>
             </div>
 
-            {/* Google Classroom styled Stream Tab comments / chat feed */}
-            <div className="border-t border-gray-200 pt-6 space-y-4">
-              <h3 className="text-xs font-bold text-gray-550 uppercase tracking-widest">Class Stream Questions</h3>
 
-              {/* Chat timeline feed */}
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                {comments.length === 0 ? (
-                  <p className="text-[10px] text-gray-400 italic text-center py-4 font-sans">No questions posted yet in the stream.</p>
-                ) : (
-                  comments.map((c) => {
-                    const isTeacher = c.role === "instructor";
-                    return (
-                      <div key={c.id} className={`p-2.5 rounded-lg border text-xs leading-relaxed ${isTeacher ? 'bg-blue-50/30 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
-                        <span className={`font-bold ${isTeacher ? 'text-blue-600' : 'text-gray-700'}`}>
-                          {c.authorName}:
-                        </span>{" "}
-                        <span className="text-gray-650">{c.text}</span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Send Comment Form */}
-              <form onSubmit={handleSendComment} className="space-y-2">
-                <label htmlFor="comments-input" className="text-[10px] font-mono tracking-widest uppercase text-gray-400 font-bold block">Send Comment or Question to Teacher</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    id="comments-input"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    placeholder="Ask a question or request clarification..."
-                    className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-805 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
-                  />
-                  <button
-                    type="submit"
-                    id="send-comment-btn"
-                    className="bg-blue-600 hover:bg-blue-750 text-white rounded-xl px-4 py-2 transition-colors cursor-pointer flex items-center justify-center shadow-sm"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-                {commentStatus && (
-                  <p className="text-[9px] font-mono text-emerald-600 uppercase font-semibold">{commentStatus}</p>
-                )}
-              </form>
-            </div>
           </div>
         )}
       </div>

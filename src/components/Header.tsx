@@ -38,7 +38,9 @@ export default function Header({ onProfileLoaded, currentProfile, currentTab, se
 
           if (userSnap.exists()) {
             const profileData = userSnap.data() as UserProfile;
-            const targetRole = isJoiningRoom ? "student" as const : (savedPref || profileData.role);
+            const targetRole = (isJoiningRoom && profileData.role === "instructor") 
+              ? "instructor" as const 
+              : (isJoiningRoom ? "student" as const : (savedPref || profileData.role));
 
             if (profileData.role !== targetRole) {
               // Automatically switch role to match active selection or invitation link

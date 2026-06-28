@@ -32,7 +32,7 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
   const [copied, setCopied] = useState(false);
 
   // Tabs for Google Classroom layout
-  const [currentSubTab, setCurrentSubTab] = useState<'stream' | 'metrics' | 'people' | 'profiles'>('stream');
+  const [currentSubTab, setCurrentSubTab] = useState<'stream' | 'metrics' | 'people' | 'profiles'>('metrics');
 
   // My Students Overview (pre-session) — load from studentProfiles
   const [myStudentsProfiles, setMyStudentsProfiles] = useState<StudentLearningProfile[]>([]);
@@ -52,8 +52,6 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
   const [attendance, setAttendance] = useState<StudentAttendance[]>([]);
   const [timeline, setTimeline] = useState<TimelineMetric[]>([]);
   const [alerts, setAlerts] = useState<StudentAlert[]>([]);
-  const [comments, setComments] = useState<any[]>([]);
-  const [announcementText, setAnnouncementText] = useState("");
 
   // Statistics summaries
   const [avgAttention, setAvgAttention] = useState(85);
@@ -161,17 +159,21 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
         const lastMs = typeof r.lastActiveAt.toDate === "function"
           ? r.lastActiveAt.toDate().getTime()
           : new Date(r.lastActiveAt).getTime();
-        return (Date.now() - lastMs) < 15000;
+        const diff = Date.now() - lastMs;
+        return diff >= -5000 && diff < 20000;
       });
 
       if (onlineRecords.length > 0) {
         const sumAtt = onlineRecords.reduce((acc, r) => acc + (r.averageAttention || 0), 0);
         const sumEng = onlineRecords.reduce((acc, r) => acc + (r.activeParticipationScore || 0), 0);
+        const sumConf = onlineRecords.reduce((acc, r) => acc + ((r as any).confusion || 0), 0);
         setAvgAttention(Math.round(sumAtt / onlineRecords.length));
         setAvgEngagement(Math.round(sumEng / onlineRecords.length));
+        setAvgConfusion(Math.round(sumConf / onlineRecords.length));
       } else {
         setAvgAttention(0);
         setAvgEngagement(0);
+        setAvgConfusion(0);
       }
     }, (err) => handleFirestoreError(err, OperationType.GET, `sessions/${activeSession.id}/attendance`));
 
@@ -201,22 +203,7 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
       setAlerts(records);
 
       const unresolvedCount = records.filter(a => !a.resolved).length;
-      const computedConfusion = Math.min(100, Math.max(0, Math.round(15 + unresolvedCount * 12)));
-      setAvgConfusion(computedConfusion);
     }, (err) => handleFirestoreError(err, OperationType.GET, `sessions/${activeSession.id}/alerts`));
-
-    // Listen to comments (chat/announcements) in real time
-    const commentsRef = collection(db, "sessions", activeSession.id, "comments");
-    const unsubscribeComments = onSnapshot(commentsRef, (snap) => {
-      const list: any[] = [];
-      snap.forEach((doc) => list.push({ ...doc.data(), id: doc.id }));
-      list.sort((a, b) => {
-        const aT = a.timestamp?.seconds || 0;
-        const bT = b.timestamp?.seconds || 0;
-        return aT - bT; // chronological order
-      });
-      setComments(list);
-    }, (err) => console.error("Error syncing stream comments:", err));
 
     // Heartbeat emitter updates lastActive every 5 seconds
     const heartbeatInterval = setInterval(async () => {
@@ -259,7 +246,6 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
       unsubscribeAttendance();
       unsubscribeTimeline();
       unsubscribeAlerts();
-      unsubscribeComments();
       clearInterval(cronInterval);
       clearInterval(heartbeatInterval);
 
@@ -344,22 +330,7 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
     }
   };
 
-  // Post announcement to stream
-  const handlePostAnnouncement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!announcementText.trim() || !activeSession) return;
-    try {
-      await addDoc(collection(db, "sessions", activeSession.id, "comments"), {
-        authorName: instructorName,
-        text: announcementText.trim(),
-        timestamp: serverTimestamp(),
-        role: "instructor"
-      });
-      setAnnouncementText("");
-    } catch (err) {
-      console.error("Error sending announcement:", err);
-    }
-  };
+
 
   // Evaluate optimal instruction strategy using Express server endpoint
   const handleEvaluateRLPolicy = async () => {
@@ -422,7 +393,8 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
       const lastMs = typeof r.lastActiveAt.toDate === "function"
         ? r.lastActiveAt.toDate().getTime()
         : new Date(r.lastActiveAt).getTime();
-      return (Date.now() - lastMs) < 15000;
+      const diff = Date.now() - lastMs;
+      return diff >= -5000 && diff < 20000;
     });
 
     const lowAttentionStudents = onlineStudents.filter(r => (r.averageAttention ?? 0) < 50);
@@ -904,16 +876,7 @@ ${generatedFeedback}
 
           {/* Google Classroom Sub-Tabs */}
           <div className="flex border-b border-gray-200 overflow-x-auto">
-            <button
-              onClick={() => setCurrentSubTab('stream')}
-              className={`py-3 px-6 text-xs uppercase tracking-wider font-bold transition-all cursor-pointer border-b-2 whitespace-nowrap ${
-                currentSubTab === 'stream'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100/50'
-              }`}
-            >
-              Stream Feed
-            </button>
+
             <button
               onClick={() => setCurrentSubTab('metrics')}
               className={`py-3 px-6 text-xs uppercase tracking-wider font-bold transition-all cursor-pointer border-b-2 whitespace-nowrap ${
@@ -946,117 +909,6 @@ ${generatedFeedback}
               Student Profiles
             </button>
           </div>
-
-          {/* TAB 1: STREAM FEED */}
-          {currentSubTab === 'stream' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-              {/* Left sidebar widgets */}
-              <div className="space-y-4 lg:col-span-1">
-                {/* Active Alerts notification card */}
-                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-2">
-                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-gray-400 font-bold">Class Status</h4>
-                  <div className="flex items-center gap-2 text-rose-600 bg-rose-50 border border-rose-100 p-2.5 rounded-lg">
-                    <ShieldAlert className="w-4 h-4 animate-bounce" />
-                    <div>
-                      <p className="text-xs font-bold uppercase">{alerts.filter(a => !a.resolved).length} Unresolved Alerts</p>
-                      <p className="text-[9px] text-rose-500 mt-0.5">Checked-in students with low attention</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Live Warnings block */}
-                <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
-                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-gray-400 font-bold">Unresolved Anomalies</h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {alerts.filter(a => !a.resolved).length === 0 ? (
-                      <p className="text-[10px] font-mono text-gray-400 italic text-center py-4">All students are focused!</p>
-                    ) : (
-                      alerts.filter(a => !a.resolved).map((item) => (
-                        <div key={item.id} className="bg-red-50 border border-red-150 p-2.5 rounded-lg flex items-center justify-between text-xs">
-                          <div>
-                            <p className="font-bold text-gray-900">{item.studentName}</p>
-                            <p className="text-[9px] text-red-650 uppercase font-mono mt-0.5">{item.type.replace('_',' ')}</p>
-                          </div>
-                          <button
-                            onClick={() => handleResolveAlert(item.id)}
-                            className="bg-white border border-red-200 text-red-650 hover:bg-red-100 text-[9px] font-mono font-bold uppercase px-2 py-1 rounded"
-                          >
-                            Resolve
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Main stream timeline comments list */}
-              <div className="lg:col-span-2 space-y-4">
-                {/* Form to post announcements */}
-                <form onSubmit={handlePostAnnouncement} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-2.5">
-                  <label htmlFor="stream-post-input" className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-wider block">Share something with your class</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      id="stream-post-input"
-                      value={announcementText}
-                      onChange={(e) => setAnnouncementText(e.target.value)}
-                      placeholder="Announce a break, ask students to focus, or post a notice..."
-                      className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 shadow-inner"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 transition-colors cursor-pointer flex items-center justify-center shrink-0 shadow-sm"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                </form>
-
-                {/* Chronological Stream Announcements / Comments */}
-                <div className="space-y-3">
-                  {comments.length === 0 ? (
-                    <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400 italic text-xs">
-                      No stream updates or questions posted yet. Students can post live questions during class!
-                    </div>
-                  ) : (
-                    [...comments].reverse().map((c) => {
-                      const isTeacher = c.role === "instructor";
-                      return (
-                        <div
-                          key={c.id}
-                          className={`bg-white border rounded-xl p-4 shadow-sm relative transition-all ${
-                            isTeacher 
-                              ? "border-blue-200 bg-blue-50/20" 
-                              : "border-gray-200"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border uppercase ${
-                              isTeacher ? "bg-blue-105 text-blue-650 border-blue-200" : "bg-gray-100 text-gray-600 border-gray-200"
-                            }`}>
-                              {c.authorName ? c.authorName.charAt(0).toUpperCase() : "?"}
-                            </div>
-                            <div>
-                              <p className={`text-xs font-bold ${isTeacher ? 'text-blue-600' : 'text-gray-800'}`}>
-                                {c.authorName} {isTeacher && <span className="text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded ml-1 font-mono uppercase font-bold tracking-wider">Teacher</span>}
-                              </p>
-                              <p className="text-[8px] font-mono text-gray-400">
-                                {c.timestamp ? new Date(c.timestamp.seconds * 1000).toLocaleTimeString() : "Just now"}
-                              </p>
-                            </div>
-                          </div>
-                          <p className="text-xs text-gray-700 leading-relaxed mt-2.5 pl-8 font-sans">
-                            {c.text}
-                          </p>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* TAB 2: CLASSWORK & METRICS */}
           {currentSubTab === 'metrics' && (

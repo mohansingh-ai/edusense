@@ -173,6 +173,17 @@ export default function App() {
     }
   }, []);
 
+  // If an instructor is logged in, clear any urlRoomId and remove query params from the browser address bar
+  useEffect(() => {
+    if (currentProfile && currentProfile.role === "instructor" && urlRoomId) {
+      setUrlRoomId(null);
+      if (window.history.replaceState) {
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({ path: cleanUrl }, "", cleanUrl);
+      }
+    }
+  }, [currentProfile, urlRoomId]);
+
   const handleSaveRolePreference = (role: 'student' | 'instructor') => {
     setRolePreference(role);
     localStorage.setItem("user_role_preference", role);
@@ -270,7 +281,7 @@ export default function App() {
         if (matchedRoom.courseId && enrolledCourseIds.includes(matchedRoom.courseId)) {
           setSelectedRoom(matchedRoom);
         } else {
-          alert("Access Restricted: You are not enrolled in the course for this classroom session.");
+          alert(`Access Restricted: You are not enrolled in the course for this classroom session.\n\nDiagnostics:\n- Your Student UID: ${currentProfile.uid}\n- Session Course ID: ${matchedRoom.courseId || 'None'}\n- Your Enrolled Course IDs: ${enrolledCourseIds.length > 0 ? enrolledCourseIds.join(', ') : 'None'}`);
           setUrlRoomId(null);
         }
       }
@@ -550,7 +561,7 @@ export default function App() {
                           const hiddenCount = activeRooms.length - allowedRooms.length;
                           if (hiddenCount > 0) {
                             return (
-                              <div className="bg-red-50 border border-red-200 p-3.5 rounded-xl text-left space-y-1">
+                              <div className="bg-red-50 border border-red-200 p-3.5 rounded-xl text-left space-y-2">
                                 <p className="text-[10px] font-mono text-red-700 font-bold uppercase flex items-center gap-1.5">
                                   <ShieldAlert className="w-4 h-4 text-red-600 animate-pulse" />
                                   <span>{hiddenCount} COURSE SESSIONS HIDDEN</span>
@@ -558,6 +569,11 @@ export default function App() {
                                 <p className="text-[9.5px] text-gray-500 leading-relaxed">
                                   There are live classroom sessions active, but you are not enrolled in those courses. Access is reserved strictly to enrolled students.
                                 </p>
+                                <div className="mt-2 pt-2 border-t border-red-150 text-[9px] font-mono text-red-700/80 space-y-1">
+                                  <p><strong>Your Student UID:</strong> {currentProfile.uid}</p>
+                                  <p><strong>Enrolled Course IDs:</strong> {enrolledCourseIds.length > 0 ? enrolledCourseIds.join(', ') : 'None'}</p>
+                                  <p><strong>Active Session Course IDs:</strong> {activeRooms.map(r => r.courseId || 'None').join(', ')}</p>
+                                </div>
                               </div>
                             );
                           }
