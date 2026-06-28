@@ -95,6 +95,7 @@ export default function App() {
 
   // Student specific registered courses matching lists
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
+  const [enrolledCoursesLoading, setEnrolledCoursesLoading] = useState<boolean>(true);
 
   // Sync registered users in the database for fast sandboxed impersonation
   useEffect(() => {
@@ -119,10 +120,12 @@ export default function App() {
   useEffect(() => {
     if (!currentProfile || currentProfile.role !== "student") {
       setEnrolledCourseIds([]);
+      setEnrolledCoursesLoading(false);
       return;
     }
 
     const loadMyRegisteredCourses = async () => {
+      setEnrolledCoursesLoading(true);
       try {
         const coursesSnap = await getDocs(collection(db, "courses"));
         const list: string[] = [];
@@ -141,6 +144,8 @@ export default function App() {
       } catch (err) {
         console.warn("Student room restrictions map loading error:", err);
         setEnrolledCourseIds([]);
+      } finally {
+        setEnrolledCoursesLoading(false);
       }
     };
 
@@ -257,7 +262,7 @@ export default function App() {
 
   // Active student auto-redirect effect with strict course enrollment check
   useEffect(() => {
-    if (!currentProfile || currentProfile.role !== "student" || !urlRoomId) return;
+    if (!currentProfile || currentProfile.role !== "student" || !urlRoomId || enrolledCoursesLoading) return;
 
     if (activeRooms.length > 0) {
       const matchedRoom = activeRooms.find((r) => r.id === urlRoomId);
@@ -270,7 +275,7 @@ export default function App() {
         }
       }
     }
-  }, [activeRooms, currentProfile, urlRoomId, enrolledCourseIds]);
+  }, [activeRooms, currentProfile, urlRoomId, enrolledCourseIds, enrolledCoursesLoading]);
 
   const handleProfileLoaded = useCallback((profile: UserProfile | null) => {
     setCurrentProfile(profile);
@@ -566,6 +571,11 @@ export default function App() {
                             <p className="text-[10px] text-gray-500 leading-relaxed">
                               Connecting to secure lecture session <span className="text-blue-600 font-mono font-bold">{urlRoomId}</span>. Please verify that the instructor has started the session.
                             </p>
+                          </div>
+                        ) : enrolledCoursesLoading ? (
+                          <div className="py-8 border border-gray-200 bg-gray-50 rounded-xl space-y-4 p-6 text-center">
+                            <RefreshCw className="w-6 h-6 text-blue-650 animate-spin mx-auto" />
+                            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Verifying Course Enrollments...</p>
                           </div>
                         ) : activeRooms.filter(r => r.courseId && enrolledCourseIds.includes(r.courseId)).length === 0 ? (
                           <div className="py-12 border border-gray-200 rounded-xl space-y-4 flex flex-col items-center justify-center bg-gray-50 shadow-inner">
