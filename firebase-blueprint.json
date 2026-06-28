@@ -1,0 +1,136 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information including role (instructor, student, admin).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The user's display name" },
+        "email": { "type": "string", "description": "The user's email address" },
+        "role": { "type": "string", "enum": ["instructor", "student", "admin"], "description": "The system role of the user" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The date and time the user account was registered" }
+      },
+      "required": ["name", "email", "role", "createdAt"]
+    },
+    "Course": {
+      "title": "Course Details",
+      "description": "Course created by administrator",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Course unique document identifier" },
+        "code": { "type": "string", "description": "Course code e.g. CS-101" },
+        "title": { "type": "string", "description": "Course title" },
+        "description": { "type": "string", "description": "Subject summary" },
+        "teacherId": { "type": "string", "description": "Teacher user ID assigned to course" },
+        "teacherName": { "type": "string", "description": "Teacher display name" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Course registration timestamp" }
+      },
+      "required": ["id", "code", "title", "createdAt"]
+    },
+    "EnrolledStudent": {
+      "title": "Enrolled Student",
+      "description": "Enrolls a student in a course",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "Student user ID" },
+        "studentName": { "type": "string", "description": "Student display name" },
+        "studentEmail": { "type": "string", "description": "Student email" },
+        "assignedAt": { "type": "string", "format": "date-time", "description": "Enrollment timestamp" }
+      },
+      "required": ["studentId", "studentName", "assignedAt"]
+    },
+    "Session": {
+      "title": "Classroom Session",
+      "description": "A live or completed classroom session tracking engagement and teaching state.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the lecture or lesson" },
+        "instructorId": { "type": "string", "description": "The UID of the instructor who created the session" },
+        "instructorName": { "type": "string", "description": "The display name of the instructor" },
+        "status": { "type": "string", "enum": ["active", "completed"], "description": "Current state of the session" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Session creation timestamp" },
+        "completedAt": { "type": "string", "format": "date-time", "description": "Session completion timestamp" },
+        "teachingStrategy": { "type": "string", "description": "The current pedagogical style suggested or active" },
+        "currentPacing": { "type": "string", "enum": ["slow", "normal", "fast"], "description": "Current pace of teaching recommended" },
+        "feedback": { "type": "string", "description": "AI-generated feedback or summary at completion" },
+        "courseId": { "type": "string", "description": "Identifier of assigned course" },
+        "courseCode": { "type": "string", "description": "Code of assigned course" }
+      },
+      "required": ["title", "instructorId", "status", "createdAt"]
+    },
+    "Attendance": {
+      "title": "Student Attendance",
+      "description": "Attendance details of a student for a specific session.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "description": "Reference to the active classroom session" },
+        "studentId": { "type": "string", "description": "Reference to the user record for the student" },
+        "studentName": { "type": "string", "description": "The display name of the student" },
+        "joinedAt": { "type": "string", "format": "date-time", "description": "When the student joined the session" },
+        "status": { "type": "string", "enum": ["present", "absent"], "description": "Attendance status" },
+        "activeParticipationScore": { "type": "number", "description": "Involvement rate (0-100)" },
+        "averageAttention": { "type": "number", "description": "Average attention score throughout the session (0-100)" }
+      },
+      "required": ["sessionId", "studentId", "studentName", "joinedAt", "status"]
+    },
+    "TimelineMetric": {
+      "title": "Timeline Metric",
+      "description": "Aggregated classroom engagement data stored at regular intervals for charting.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "description": "Reference to the classroom session" },
+        "attention": { "type": "number", "description": "Aggregated attention score (0-100)" },
+        "engagement": { "type": "number", "description": "Aggregated engagement score (0-100)" },
+        "confusion": { "type": "number", "description": "Aggregated confusion index (0-100)" },
+        "strategy": { "type": "string", "description": "Current reinforcement learning strategy proposed" },
+        "recommendation": { "type": "string", "description": "Pacing recommendation text" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Timestamp of aggregation interval" }
+      },
+      "required": ["sessionId", "attention", "engagement", "confusion", "timestamp"]
+    },
+    "StudentAlert": {
+      "title": "Student Alert",
+      "description": "Triggered notification when a student exhibits disengagement, distraction, or sleep signs.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "description": "Session tracking source" },
+        "studentId": { "type": "string", "description": "Student identification" },
+        "studentName": { "type": "string", "description": "Student name" },
+        "type": { "type": "string", "enum": ["low_attention", "sleeping", "distracted"], "description": "Alert classification type" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Time of detection" },
+        "resolved": { "type": "boolean", "description": "Flag indicating if the instructor dismissed or resolved the item" }
+      },
+      "required": ["sessionId", "studentId", "studentName", "type", "timestamp", "resolved"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of registerable user profiles"
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Courses managed by Admin"
+    },
+    "/courses/{courseId}/students/{studentId}": {
+      "schema": "EnrolledStudent",
+      "description": "Students assigned to a specific course"
+    },
+    "/sessions/{sessionId}": {
+      "schema": "Session",
+      "description": "Active and completed learning sessions"
+    },
+    "/sessions/{sessionId}/attendance/{attendanceId}": {
+      "schema": "Attendance",
+      "description": "Sub-collection of student attendance records per session"
+    },
+    "/sessions/{sessionId}/timeline/{timelineId}": {
+      "schema": "TimelineMetric",
+      "description": "Sub-collection of minute-by-minute session analytics"
+    },
+    "/sessions/{sessionId}/alerts/{alertId}": {
+      "schema": "StudentAlert",
+      "description": "Sub-collection of engagement warnings"
+    }
+  }
+}

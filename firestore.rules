@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global bypass for local development/sandbox review of the EduSense SMART Classroom
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /courses/{courseId} {
+      allow read, write: if true;
+    }
+
+    match /courses/{courseId}/students/{studentId} {
+      allow read, write: if true;
+    }
+
+    match /sessions/{sessionId} {
+      allow read, write: if true;
+    }
+
+    match /sessions/{sessionId}/attendance/{attendanceId} {
+      allow read, write: if true;
+    }
+
+    match /sessions/{sessionId}/timeline/{timelineId} {
+      allow read, write: if true;
+    }
+
+    match /sessions/{sessionId}/alerts/{alertId} {
+      allow read, write: if true;
+    }
+
+    // Default catch-all
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "EduSense",
+  "description": "AI-powered smart classroom attention monitoring and adaptive reinforcement learning instruction system.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
