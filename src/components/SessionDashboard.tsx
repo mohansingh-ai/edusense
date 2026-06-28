@@ -298,7 +298,6 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
       setAttendance([]);
       setTimeline([]);
       setAlerts([]);
-      setComments([]);
       setAvgAttention(85);
       setAvgEngagement(80);
       setAvgConfusion(15);
@@ -606,7 +605,6 @@ ${generatedFeedback}
       setAttendance([]);
       setTimeline([]);
       setAlerts([]);
-      setComments([]);
       setAvgAttention(85);
       setAvgEngagement(80);
       setAvgConfusion(15);
