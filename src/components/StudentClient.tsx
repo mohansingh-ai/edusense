@@ -458,7 +458,7 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
               ctx.beginPath();
               ctx.strokeStyle = "#10b981";
               ctx.moveTo(boxX + boxW / 2, boxY + boxH / 2);
-              ctx.lineTo(boxX + boxW / 2 - 35);
+              ctx.lineTo(boxX + boxW / 2 - 35, boxY + boxH / 2);
               ctx.stroke();
 
               ctx.fillStyle = "#10b981";

@@ -101,19 +101,9 @@ export default function Header({ onProfileLoaded, currentProfile, currentTab, se
 
           if (userSnap.exists()) {
             const profileData = userSnap.data() as UserProfile;
-            const targetRole = (isJoiningRoom && profileData.role === "instructor") 
-              ? "instructor" as const 
-              : (isJoiningRoom ? "student" as const : (savedPref || profileData.role));
-
-            if (profileData.role !== targetRole) {
-              const updatedProfile = { ...profileData, role: targetRole };
-              await setDoc(userRef, updatedProfile, { merge: true });
-              localStorage.setItem("user_role_preference", targetRole);
-              onProfileLoadedRef.current(updatedProfile);
-            } else {
-              localStorage.setItem("user_role_preference", profileData.role);
-              onProfileLoadedRef.current(profileData);
-            }
+            // Database role always takes absolute precedence over localStorage to prevent incorrect role overrides
+            localStorage.setItem("user_role_preference", profileData.role);
+            onProfileLoadedRef.current(profileData);
           } else {
             // New user registration
             const dbProfile = {
