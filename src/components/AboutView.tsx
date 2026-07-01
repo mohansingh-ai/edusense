@@ -1,91 +1,192 @@
 import React from "react";
-import { Brain, Camera, EyeOff, ShieldCheck, Heart, Sparkles, BookOpen } from "lucide-react";
+import { Brain, Camera, EyeOff, ShieldCheck, Heart, Sparkles, User, Code, Terminal, Cpu } from "lucide-react";
 
 export default function AboutView() {
+  const team = [
+    {
+      name: "Raja Soban",
+      role: "Lead Frontend Architect",
+      desc: "Designed and implemented the core interactive classroom interfaces, real-time student portals, and high-performance React component layers.",
+      icon: Code,
+      color: "from-blue-500 to-indigo-500",
+      glow: "hover:border-indigo-400"
+    },
+    {
+      name: "Hasnat Khan",
+      role: "AI & Computer Vision Architect",
+      desc: "Configured the local FaceMesh tracking matrix, real-time gaze telemetry analytics pipeline, and Gemini AI strategy advisor models.",
+      icon: Cpu,
+      color: "from-purple-500 to-pink-500",
+      glow: "hover:border-purple-400"
+    },
+    {
+      name: "Mubashir Azeem",
+      role: "Database & Cloud Infrastructure",
+      desc: "Architected the security rules, Firestore schema, virtual promotion mechanics, and node microservice APIs for real-time synchronization.",
+      icon: Terminal,
+      color: "from-emerald-500 to-teal-500",
+      glow: "hover:border-emerald-400"
+    }
+  ];
+
   return (
-    <div id="about-view-root" className="max-w-4xl mx-auto px-6 py-6 space-y-12 animate-fade-in text-left text-gray-800 font-sans">
-      {/* Intro Header */}
-      <div className="text-center space-y-4">
-        <div className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 text-blue-650 text-xs font-semibold">
-          <Brain className="w-3.5 h-3.5 text-blue-650" />
-          <span>SZABIST Islamabad Smart Initiative</span>
+    <div id="about-view-root" className="max-w-5xl mx-auto px-6 py-10 space-y-16 text-left font-sans text-gray-800 relative overflow-hidden">
+      {/* Self-contained CSS Animations */}
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes subtlePulse {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.05); opacity: 1; }
+        }
+        .animate-fade-in-up {
+          animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-float {
+          animation: float 4s ease-in-out infinite;
+        }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+      `}</style>
+
+      {/* Decorative background glow */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-blue-100/40 rounded-full blur-3xl -z-10 animate-float" />
+      <div className="absolute bottom-10 left-0 w-80 h-80 bg-purple-100/40 rounded-full blur-3xl -z-10 animate-float" style={{ animationDelay: '2s' }} />
+
+      {/* Title & Introduction Section */}
+      <div className="text-center space-y-6 animate-fade-in-up">
+        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-150 rounded-full px-4 py-1.5 shadow-sm">
+          <Brain className="w-4 h-4 text-blue-600 animate-pulse" />
+          <span className="text-xs font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent uppercase tracking-wider">
+            Smart Classroom Initiative
+          </span>
         </div>
-        <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 uppercase">
-          About <span className="text-blue-600">EduSense</span>
-        </h2>
-        <p className="text-xs text-gray-400 font-mono tracking-widest uppercase font-semibold">
-          AI-driven real-time classroom visual analytics
+        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 leading-tight">
+          ABOUT <span className="bg-gradient-to-r from-blue-600 to-indigo-650 bg-clip-text text-transparent">EDUSENSE</span>
+        </h1>
+        <p className="text-xs font-mono font-bold text-gray-455 uppercase tracking-widest">
+          AI-POWERED REAL-TIME STUDENT ENGAGEMENT TELEMETRY
         </p>
-        <p className="text-sm text-gray-500 leading-relaxed max-w-2xl mx-auto mt-2">
-          EduSense is a groundbreaking educational technology framework deployed in computer laboratories and smart classrooms at SZABIST Islamabad. By checking attention, engagement, and understanding in real-time, the system allows educators to fine-tune instruction and pacing instantly.
+        <p className="text-base text-gray-650 leading-relaxed max-w-3xl mx-auto mt-4 font-normal">
+          EduSense is a premium educational technology analytics platform. It leverages state-of-the-art web camera gaze calculations and expression modeling to capture attention, engagement, and understanding signals in real-time. This feedback loop helps smart classroom teachers refine their delivery pace, launch interactive reinforcements, and improve classroom outcomes.
         </p>
       </div>
 
-      {/* Feature Pillars */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Pillar 1: Webcam Landmark Eye-tracking */}
-        <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm space-y-3">
-          <div className="bg-blue-50 border border-blue-150 w-10 h-10 rounded-xl flex items-center justify-center text-blue-600">
-            <Camera className="w-5 h-5" />
+      {/* Feature Pillars Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up delay-100">
+        <div className="bg-white border border-gray-150 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 space-y-4 group">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+            <Camera className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+          <h3 className="text-base font-bold text-gray-900 uppercase tracking-wide">
             Facial Landmark & Gaze Tracking
           </h3>
-          <p className="text-xs text-gray-500 leading-relaxed font-sans">
-            The platform activates a local web camera capture stream to identify facial anchor matrices, measure blinking intervals in milliseconds, check eye-contact durations, and map head movement velocities. This telemetry translates directly into real-time classroom attention metrics.
+          <p className="text-xs text-gray-500 leading-relaxed">
+            The platform processes local camera feeds at the edge to capture 468 facial coordinates, measuring blink frequencies, direction vectors, and head pose angles to generate an accurate, live, attention metrics stream.
           </p>
         </div>
 
-        {/* Pillar 2: Dynamic Reinforcement Learning Policy */}
-        <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm space-y-3">
-          <div className="bg-blue-50 border border-blue-150 w-10 h-10 rounded-xl flex items-center justify-center text-blue-600">
-            <Sparkles className="w-5 h-5" />
+        <div className="bg-white border border-gray-150 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 space-y-4 group">
+          <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+            <Sparkles className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
-            RL-Driven Policy Adaption
+          <h3 className="text-base font-bold text-gray-900 uppercase tracking-wide">
+            Empathetic AI Strategy Advisor
           </h3>
-          <p className="text-xs text-gray-500 leading-relaxed font-sans">
-            A state-action reward policy matches student telemetry logs to specific actions: <span className="text-blue-600 font-mono font-bold">REINFORCE_CONCEPTS</span>, <span className="text-blue-600 font-mono font-bold">ADJUST_SPEED_DOWN</span>, and critical instructions. If students fall into a severe disengagement state, Gemini generates high-impact re-focus activities.
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Real-time classroom attention logs are translated through a reinforcement learning scheme into actionable teaching prompts. Gemini automatically recommends pacing changes or generates custom quizzes to re-focus distracted students.
           </p>
         </div>
 
-        {/* Pillar 3: Crypt Privacy Preserving Blurs */}
-        <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm space-y-3">
-          <div className="bg-blue-50 border border-blue-150 w-10 h-10 rounded-xl flex items-center justify-center text-blue-600">
-            <EyeOff className="w-5 h-5" />
+        <div className="bg-white border border-gray-150 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 space-y-4 group">
+          <div className="w-12 h-12 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+            <EyeOff className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
-            Cryptographic Privacy Blurs
+          <h3 className="text-base font-bold text-gray-900 uppercase tracking-wide">
+            Privacy-First Architecture
           </h3>
-          <p className="text-xs text-gray-500 leading-relaxed font-sans">
-            To satisfy educational data safeguards, student video feed data remains local. Pixels undergo visual blurring and encryption at the edge before head vectors generate numeric values. Raw student faces are never recorded or transmitted to cloud platforms.
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Student privacy remains a core design tenet. Video processing is executed entirely within the client's web browser, and live feeds are blurred locally. Only anonymous numerical score parameters are stored in Firestore.
           </p>
         </div>
 
-        {/* Pillar 4: Collaborative Classroom Interaction */}
-        <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm space-y-3">
-          <div className="bg-blue-50 border border-blue-150 w-10 h-10 rounded-xl flex items-center justify-center text-blue-600">
-            <ShieldCheck className="w-5 h-5" />
+        <div className="bg-white border border-gray-150 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 space-y-4 group">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+            <ShieldCheck className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
-            Verified Token Sign-On
+          <h3 className="text-base font-bold text-gray-900 uppercase tracking-wide">
+            Secure Authentication Mapping
           </h3>
-          <p className="text-xs text-gray-500 leading-relaxed font-sans">
-            EduSense utilizes direct Google Auth token verification synchronized with persistent Firestore schemas. Role permissions are handled to prevent spoofing: a student profile is limited to their own gaze logging and shared class rosters.
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Integrates secure Google Auth token routing synced with persistent Firestore schemas. Virtual student profiles automatically promote to authenticated Google accounts to protect course registration mappings.
           </p>
         </div>
       </div>
 
-      {/* Heart-filled conclusion on craftsmanship and SZABIST's mission */}
-      <div className="bg-blue-50/50 border border-blue-150 p-6 rounded-xl text-center space-y-4 max-w-xl mx-auto shadow-inner">
-        <div className="text-red-500 flex justify-center">
-          <Heart className="w-6 h-6 fill-red-500 animate-pulse" />
+      {/* Team Creators Section */}
+      <div className="space-y-8 animate-fade-in-up delay-200">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
+            Meet the Development Team
+          </h2>
+          <p className="text-xs font-mono font-bold text-gray-400 uppercase tracking-widest">
+            THE ARCHITECTS BEHIND THE PLATFORM
+          </p>
         </div>
-        <p className="text-xs text-gray-650 font-sans leading-relaxed">
-          The SZABIST Islamabad Smart Classroom program seeks to enrich learning environments with empathetic, privacy-safe, real-time AI solutions. Built with exceptional layouts, clear typography, and optimized data synchronization.
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {team.map((member, index) => (
+            <div 
+              key={index}
+              className={`bg-white border border-gray-150 rounded-2xl p-6 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-350 flex flex-col justify-between group cursor-default relative overflow-hidden`}
+            >
+              {/* Glowing card border indicator */}
+              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${member.color}`} />
+              
+              <div className="space-y-4">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${member.color} text-white flex items-center justify-center shadow-md transform group-hover:rotate-6 transition-all duration-300`}>
+                  <member.icon className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <h4 className="font-bold text-gray-900 text-lg tracking-tight group-hover:text-blue-600 transition-colors">
+                    {member.name}
+                  </h4>
+                  <p className="text-[10px] font-mono font-bold text-gray-450 uppercase tracking-wider mt-0.5">
+                    {member.role}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed font-sans text-left">
+                  {member.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* empthy footer block */}
+      <div className="bg-gradient-to-br from-blue-50/70 to-indigo-50/70 border border-blue-150 p-8 rounded-3xl text-center space-y-4 max-w-2xl mx-auto shadow-inner animate-fade-in-up delay-300">
+        <div className="flex justify-center text-red-500">
+          <Heart className="w-7 h-7 fill-red-500 animate-pulse" />
+        </div>
+        <p className="text-xs text-gray-600 leading-relaxed max-w-md mx-auto font-medium font-sans">
+          EduSense is designed to enrich classrooms with modern, privacy-safe AI. We built this platform to build deeper connections between student needs and instructor methods.
         </p>
-        <p className="text-[9px] text-gray-400 font-mono uppercase tracking-wider font-semibold">
-          Managed by SZABIST Computer Science Department Islamabad
+        <p className="text-[10px] font-mono font-bold text-gray-450 uppercase tracking-wider">
+          SZABIST Computer Science Department
         </p>
       </div>
     </div>
