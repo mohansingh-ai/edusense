@@ -69,7 +69,7 @@ export default function AboutView() {
           </span>
         </div>
         <h1 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 leading-tight">
-          ABOUT <span className="bg-gradient-to-r from-blue-600 to-indigo-650 bg-clip-text text-transparent">EDUSENSE</span>
+          ABOUT <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">EDUSENSE</span>
         </h1>
         <p className="text-xs font-mono font-bold text-gray-455 uppercase tracking-widest">
           AI-POWERED REAL-TIME STUDENT ENGAGEMENT TELEMETRY
@@ -172,9 +172,6 @@ export default function AboutView() {
         </div>
         <p className="text-xs text-gray-600 leading-relaxed max-w-md mx-auto font-medium font-sans">
           EduSense is designed to enrich classrooms with modern, privacy-safe AI. We built this platform to build deeper connections between student needs and instructor methods.
-        </p>
-        <p className="text-[10px] font-mono font-bold text-gray-450 uppercase tracking-wider">
-          SZABIST Computer Science Department
         </p>
       </div>
     </div>

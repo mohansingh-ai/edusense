@@ -918,7 +918,7 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
               {/* Simulated Gaze controller */}
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col justify-between">
                 <div>
-                  <p className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">Sandbox Attendance Simulator</p>
+                  <p className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">Attendance Simulator</p>
                   <p className="text-xs text-gray-500 leading-relaxed mt-1 mb-3">Simulate different facial landmark behaviors to test the AI strategy advisor</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">

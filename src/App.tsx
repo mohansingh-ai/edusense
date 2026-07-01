@@ -153,7 +153,11 @@ export default function App() {
         const list: string[] = [];
         for (const courseDoc of coursesSnap.docs) {
           const snap = await getDocs(collection(db, "courses", courseDoc.id, "students"));
-          const matchesMe = snap.docs.some(d => d.data().studentId === currentProfile.uid);
+          const matchesMe = snap.docs.some(d => {
+            const data = d.data();
+            return (data.studentId === currentProfile.uid) ||
+                   (data.studentEmail && currentProfile.email && data.studentEmail.toLowerCase() === currentProfile.email.toLowerCase());
+          });
           if (matchesMe) {
             list.push(courseDoc.id);
           }
@@ -448,62 +452,11 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Sandbox Enclosure & Fast Impersonation */}
-                  <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm relative flex flex-col justify-between gap-6">
-                    <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-50 border border-amber-200 text-amber-600 font-mono text-[9px] uppercase tracking-widest px-3 py-1 rounded font-bold">
-                      EVALUATION BYPASS & QUICK LOGINS
-                    </span>
-
-                    {/* Impersonator Quick Panel */}
-                    <div className="space-y-4 mt-2">
+                  {/* Administrative Control Access Card */}
+                  <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-sm flex flex-col justify-center">
+                    <form onSubmit={handleAdminLogin} className="space-y-4">
                       <div className="space-y-1 text-center">
-                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-widest font-mono flex items-center justify-center gap-1.5">
-                          <UserCheck className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Virtual Credentials Login</span>
-                        </h3>
-                        <p className="text-[10px] text-gray-500 font-sans leading-relaxed">
-                          Select any pre-allocated Student or Instructor profile added in the Admin module to sign in instantly.
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <select
-                          value={selectedImpersonateId}
-                          onChange={(e) => setSelectedImpersonateId(e.target.value)}
-                          className="w-full bg-white border border-gray-250 rounded-xl px-3 py-2.5 text-xs text-gray-700 focus:outline-none shadow-sm"
-                        >
-                          <option value="">-- Choose Virtual Account --</option>
-                          <optgroup label="Virtual Students">
-                            {allUsers.filter(u => u.role === "student").map(u => (
-                              <option key={u.uid} value={u.uid}>
-                                Student: {u.name} ({u.email})
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Virtual Instructors (Teachers)">
-                            {allUsers.filter(u => u.role === "instructor").map(u => (
-                              <option key={u.uid} value={u.uid}>
-                                Educator: {u.name} ({u.email})
-                              </option>
-                            ))}
-                          </optgroup>
-                        </select>
-
-                        <button
-                          type="button"
-                          disabled={!selectedImpersonateId}
-                          onClick={handleImpersonateUser}
-                          className="w-full bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-650 disabled:opacity-40 disabled:cursor-not-allowed py-2.5 px-4 rounded-xl font-mono text-[10.5px] uppercase font-bold transition-all cursor-pointer shadow-sm"
-                        >
-                          Instant LogIn as Selected
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Administrator bypass passcode entry */}
-                    <form onSubmit={handleAdminLogin} className="pt-4 border-t border-gray-100 space-y-3">
-                      <div className="space-y-1 text-center">
-                        <h4 className="text-[10px] font-mono text-gray-700 uppercase tracking-widest">Administrative Control Access</h4>
+                        <h4 className="text-[10px] font-mono text-gray-700 uppercase tracking-widest font-bold">Administrative Control Access</h4>
                         <p className="text-[9px] text-gray-500 font-sans">Enter Campus Passcode (<span className="text-blue-600 font-mono font-bold">admin123</span>)</p>
                       </div>
 
@@ -549,10 +502,11 @@ export default function App() {
                   <SessionDashboard
                     instructorId={currentProfile.uid}
                     instructorName={currentProfile.name}
+                    instructorEmail={currentProfile.email}
                   />
                 ) : (
                   // Student View: Select active classroom or join
-                  <div className="max-w-6xl mx-auto px-6 w-full dev-sandbox-container">
+                  <div className="max-w-6xl mx-auto px-6 w-full dev-portal-container">
                     {selectedRoom ? (
                       <div className="space-y-4 max-w-4xl mx-auto">
                         <button

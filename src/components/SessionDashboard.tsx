@@ -23,9 +23,10 @@ import { Play, StopCircle, Users, Activity, Heart, ShieldAlert, Sparkles, CheckC
 interface SessionDashboardProps {
   instructorId: string;
   instructorName: string;
+  instructorEmail: string;
 }
 
-export default function SessionDashboard({ instructorId, instructorName }: SessionDashboardProps) {
+export default function SessionDashboard({ instructorId, instructorName, instructorEmail }: SessionDashboardProps) {
   const [activeSession, setActiveSession] = useState<ClassroomSession | null>(null);
   const [sessionTitle, setSessionTitle] = useState("");
   const [creating, setCreating] = useState(false);
@@ -73,24 +74,24 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
   // Sync instructor's assigned courses from the catalog
   useEffect(() => {
     if (!instructorId) return;
-    const q = query(collection(db, "courses"), where("teacherId", "==", instructorId));
+    const q = collection(db, "courses");
     const unsub = onSnapshot(q, (snap) => {
       const list: any[] = [];
       snap.forEach(d => {
-        list.push({ ...d.data(), id: d.id });
+        const data = d.data();
+        const matchesMe = (data.teacherId === instructorId) || 
+                          (data.teacherEmail && instructorEmail && data.teacherEmail.toLowerCase() === instructorEmail.toLowerCase());
+        if (matchesMe) {
+          list.push({ ...data, id: d.id });
+        }
       });
-      // Fallback mock courses if Firestore is empty
-      if (list.length === 0) {
-        setAssignedCourses([]);
-      } else {
-        setAssignedCourses(list);
-      }
+      setAssignedCourses(list);
     }, (err) => {
-      console.error("Error loading instructor assigned courses:", err);
+      console.warn("Instructor courses load failed:", err);
       setAssignedCourses([]);
     });
     return () => unsub();
-  }, [instructorId]);
+  }, [instructorId, instructorEmail]);
 
   // Recover any pre-existing active session for this instructor on mount
   useEffect(() => {
@@ -299,7 +300,12 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
     const mockId = `session_${Date.now()}`;
     const matchedCourse = assignedCourses.find(c => c.id === selectedCourseId);
 
-    if (!matchedCourse || matchedCourse.teacherId !== instructorId) {
+    const isTeacher = matchedCourse && (
+      (matchedCourse.teacherId === instructorId) ||
+      (matchedCourse.teacherEmail && instructorEmail && matchedCourse.teacherEmail.toLowerCase() === instructorEmail.toLowerCase())
+    );
+
+    if (!matchedCourse || !isTeacher) {
       alert("Error: You are not the assigned instructor for this course.");
       setCreating(false);
       return;

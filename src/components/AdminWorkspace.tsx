@@ -39,6 +39,7 @@ interface Course {
   description?: string;
   teacherId?: string;
   teacherName?: string;
+  teacherEmail?: string;
   createdAt: any;
 }
 
@@ -364,7 +365,8 @@ export default function AdminWorkspace() {
     try {
       await setDoc(doc(db, "courses", courseId), {
         teacherId: teacherId || null,
-        teacherName: instructor ? instructor.name : null
+        teacherName: instructor ? instructor.name : null,
+        teacherEmail: instructor ? instructor.email : null
       }, { merge: true });
       showNotif("Instructor allocation updated successfully.");
       if (selectedCourse?.id === courseId) {
@@ -818,7 +820,7 @@ export default function AdminWorkspace() {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                <span>Campus Registry & Credentials Quick-Logins ({users.length})</span>
+                <span>Campus Registry ({users.length})</span>
               </h3>
 
               <div className="relative w-full md:w-72">
@@ -831,10 +833,6 @@ export default function AdminWorkspace() {
                   className="w-full bg-gray-50 border border-gray-205 rounded-lg px-8 py-1.5 text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500 shadow-inner"
                 />
               </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-150 p-4 rounded-xl text-[10px] text-gray-650 leading-relaxed max-w-2xl font-mono">
-              💡 <span className="text-blue-600 font-bold font-sans">Testing Prompt:</span> Standard Google Sign-In is isolated within high-security constraints. To make evaluation simple, navigate to the <span className="text-blue-600 font-sans font-bold">Login tab</span> to find a <span className="text-blue-600 font-sans font-bold font-mono text-[9px] bg-blue-50 px-1 py-0.5 rounded border border-blue-200 uppercase font-semibold">Virtual Credentials Quick-Login</span> which lists all registered student and teacher profiles so you can toggle roles instantly in this test tab or adjacent sandboxed browsers!
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto">

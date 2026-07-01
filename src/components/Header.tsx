@@ -61,17 +61,28 @@ export default function Header({ onProfileLoaded, currentProfile, currentTab, se
               // 2. Delete old virtual user document
               await deleteDoc(doc(db, "users", virtualDocId));
 
-              // 3. Migrate course enrollments
+              // 3. Migrate course enrollments & instructor allocations
               const coursesSnap = await getDocs(collection(db, "courses"));
               for (const courseDoc of coursesSnap.docs) {
+                const courseData = courseDoc.data();
+                
+                // Migrate instructor reference if matched
+                if (courseData.teacherId === virtualDocId) {
+                  await updateDoc(doc(db, "courses", courseDoc.id), {
+                    teacherId: user.uid,
+                    teacherEmail: user.email ? user.email.toLowerCase() : (courseData.teacherEmail || null)
+                  });
+                }
+
                 const enrollmentRef = doc(db, "courses", courseDoc.id, "students", virtualDocId);
                 const enrollmentSnap = await getDoc(enrollmentRef);
                 if (enrollmentSnap.exists()) {
                   const enrollmentData = enrollmentSnap.data();
-                  // Write new enrollment with Google UID
+                  // Write new enrollment with Google UID and email
                   await setDoc(doc(db, "courses", courseDoc.id, "students", user.uid), {
                     ...enrollmentData,
                     studentId: user.uid,
+                    studentEmail: user.email ? user.email.toLowerCase() : (enrollmentData.studentEmail || null)
                   });
                   // Delete old enrollment
                   await deleteDoc(enrollmentRef);
