@@ -92,6 +92,34 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
     return () => unsub();
   }, [instructorId]);
 
+  // Recover any pre-existing active session for this instructor on mount
+  useEffect(() => {
+    if (!instructorId || activeSession) return;
+
+    const recoverActiveSession = async () => {
+      try {
+        const q = query(
+          collection(db, "sessions"),
+          where("instructorId", "==", instructorId),
+          where("status", "==", "active")
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          // Recover the first matched active session
+          const matchedSession = { ...snap.docs[0].data(), id: snap.docs[0].id } as ClassroomSession;
+          setActiveSession(matchedSession);
+          setSessionTitle(matchedSession.title);
+          setSelectedCourseId(matchedSession.courseId || "");
+          console.log("Automatically recovered active session:", matchedSession.id);
+        }
+      } catch (err) {
+        console.warn("Could not check for active sessions to recover:", err);
+      }
+    };
+
+    recoverActiveSession();
+  }, [instructorId]);
+
   // Load cumulative student profiles for this instructor (pre-session overview)
   useEffect(() => {
     if (!instructorId) return;
