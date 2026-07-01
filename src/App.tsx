@@ -362,6 +362,10 @@ export default function App() {
               <AdminWorkspace />
             )}
 
+            {currentTab === 'about' && (
+              <AboutView />
+            )}
+
             {currentTab === 'login' && !currentProfile && (
               <div className="max-w-4xl mx-auto px-6 py-6 text-center space-y-8">
                 {urlRoomId && (

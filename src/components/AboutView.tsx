@@ -5,24 +5,18 @@ export default function AboutView() {
   const team = [
     {
       name: "Raja Soban",
-      role: "Lead Frontend Architect",
-      desc: "Designed and implemented the core interactive classroom interfaces, real-time student portals, and high-performance React component layers.",
       icon: Code,
       color: "from-blue-500 to-indigo-500",
       glow: "hover:border-indigo-400"
     },
     {
       name: "Hasnat Khan",
-      role: "AI & Computer Vision Architect",
-      desc: "Configured the local FaceMesh tracking matrix, real-time gaze telemetry analytics pipeline, and Gemini AI strategy advisor models.",
       icon: Cpu,
       color: "from-purple-500 to-pink-500",
       glow: "hover:border-purple-400"
     },
     {
       name: "Mubashir Azeem",
-      role: "Database & Cloud Infrastructure",
-      desc: "Architected the security rules, Firestore schema, virtual promotion mechanics, and node microservice APIs for real-time synchronization.",
       icon: Terminal,
       color: "from-emerald-500 to-teal-500",
       glow: "hover:border-emerald-400"
@@ -164,13 +158,7 @@ export default function AboutView() {
                   <h4 className="font-bold text-gray-900 text-lg tracking-tight group-hover:text-blue-600 transition-colors">
                     {member.name}
                   </h4>
-                  <p className="text-[10px] font-mono font-bold text-gray-450 uppercase tracking-wider mt-0.5">
-                    {member.role}
-                  </p>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed font-sans text-left">
-                  {member.desc}
-                </p>
               </div>
             </div>
           ))}
