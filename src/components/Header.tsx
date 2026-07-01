@@ -1,6 +1,6 @@
 import { auth, db } from "../firebase";
 import { signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, updateDoc, deleteDoc } from "firebase/firestore";
 import { useState, useEffect, useRef } from "react";
 import { UserProfile } from "../types";
 import { LogIn, LogOut, Brain, Activity, ShieldCheck, User as UserIcon, Menu } from "lucide-react";
@@ -26,10 +26,73 @@ export default function Header({ onProfileLoaded, currentProfile, currentTab, se
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setCurrentUser(user);
       if (user) {
-        // Fetch or create user profile
+        setLoading(true);
         try {
           const userRef = doc(db, "users", user.uid);
-          const userSnap = await getDoc(userRef);
+          let userSnap = await getDoc(userRef);
+
+          if (!userSnap.exists() && user.email) {
+            // Check if there is a pre-registered virtual profile with the same email
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("email", "==", user.email.toLowerCase()));
+            const querySnap = await getDocs(q);
+            
+            let virtualDocId: string | null = null;
+            let virtualData: any = null;
+            
+            querySnap.forEach((d) => {
+              if (d.id !== user.uid) {
+                virtualDocId = d.id;
+                virtualData = d.data();
+              }
+            });
+
+            if (virtualDocId && virtualData) {
+              console.log(`Promoting virtual user ${virtualDocId} to Google UID ${user.uid}`);
+              
+              // 1. Copy user document to user.uid
+              const profileData = {
+                ...virtualData,
+                uid: user.uid,
+                name: user.displayName || virtualData.name,
+              } as UserProfile;
+              await setDoc(userRef, profileData);
+              
+              // 2. Delete old virtual user document
+              await deleteDoc(doc(db, "users", virtualDocId));
+
+              // 3. Migrate course enrollments
+              const coursesSnap = await getDocs(collection(db, "courses"));
+              for (const courseDoc of coursesSnap.docs) {
+                const enrollmentRef = doc(db, "courses", courseDoc.id, "students", virtualDocId);
+                const enrollmentSnap = await getDoc(enrollmentRef);
+                if (enrollmentSnap.exists()) {
+                  const enrollmentData = enrollmentSnap.data();
+                  // Write new enrollment with Google UID
+                  await setDoc(doc(db, "courses", courseDoc.id, "students", user.uid), {
+                    ...enrollmentData,
+                    studentId: user.uid,
+                  });
+                  // Delete old enrollment
+                  await deleteDoc(enrollmentRef);
+                }
+              }
+
+              // 4. Migrate student profile if exists
+              const profileOldRef = doc(db, "studentProfiles", virtualDocId);
+              const profileOldSnap = await getDoc(profileOldRef);
+              if (profileOldSnap.exists()) {
+                await setDoc(doc(db, "studentProfiles", user.uid), {
+                  ...profileOldSnap.data(),
+                  studentId: user.uid,
+                });
+                await deleteDoc(profileOldRef);
+              }
+
+              // Update snapshot state
+              userSnap = await getDoc(userRef);
+            }
+          }
 
           const params = new URLSearchParams(window.location.search);
           const isJoiningRoom = params.has("room") || params.has("roomId");
@@ -43,7 +106,6 @@ export default function Header({ onProfileLoaded, currentProfile, currentTab, se
               : (isJoiningRoom ? "student" as const : (savedPref || profileData.role));
 
             if (profileData.role !== targetRole) {
-              // Automatically switch role to match active selection or invitation link
               const updatedProfile = { ...profileData, role: targetRole };
               await setDoc(userRef, updatedProfile, { merge: true });
               localStorage.setItem("user_role_preference", targetRole);
@@ -75,7 +137,6 @@ export default function Header({ onProfileLoaded, currentProfile, currentTab, se
           const savedPref = localStorage.getItem("user_role_preference") as "student" | "instructor" | null;
           const assignedRole = isJoiningRoom ? "student" as const : (savedPref || "student" as const);
 
-          // Fallback local safe profile
           localStorage.setItem("user_role_preference", assignedRole);
           onProfileLoadedRef.current({
             uid: user.uid,
@@ -86,30 +147,8 @@ export default function Header({ onProfileLoaded, currentProfile, currentTab, se
           });
         }
       } else {
-        const params = new URLSearchParams(window.location.search);
-        const isJoiningRoom = params.has("room") || params.has("roomId");
-        if (isJoiningRoom) {
-          let guestUid = localStorage.getItem("guest_student_uid");
-          if (!guestUid) {
-            guestUid = "guest_" + Math.random().toString(36).substring(2, 11);
-            localStorage.setItem("guest_student_uid", guestUid);
-          }
-          let guestName = localStorage.getItem("guest_student_name");
-          if (!guestName) {
-            guestName = "Guest Student " + Math.floor(100 + Math.random() * 900);
-            localStorage.setItem("guest_student_name", guestName);
-          }
-          const guestProfile: UserProfile = {
-            uid: guestUid,
-            name: guestName,
-            email: "guest@edusense.internal",
-            role: "student",
-            createdAt: new Date(),
-          };
-          onProfileLoadedRef.current(guestProfile);
-        } else {
-          onProfileLoadedRef.current(null);
-        }
+        // Enforce Gmail login - do not auto-login as guest!
+        onProfileLoadedRef.current(null);
       }
       setLoading(false);
     });

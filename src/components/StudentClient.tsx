@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { doc, getDoc, setDoc, addDoc, collection, updateDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { Video, Shield, ShieldOff, Send, CheckCircle2, UserCheck, AlertTriangle, AlertCircle, RefreshCw } from "lucide-react";
+import { StudentLearningProfile } from "../types";
 
 interface StudentClientProps {
   sessionId: string;
@@ -40,6 +41,26 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
   const [liveConfusion, setLiveConfusion] = useState(10);
   const [currentGaze, setCurrentGaze] = useState("Center Gaze");
   const [currentEmotion, setCurrentEmotion] = useState("Engaged");
+
+  const [sessionEnded, setSessionEnded] = useState(false);
+  const [myProfile, setMyProfile] = useState<StudentLearningProfile | null>(null);
+
+  // Listen to cumulative student profile
+  useEffect(() => {
+    if (!studentId) return;
+    const profileRef = doc(db, "studentProfiles", studentId);
+    const unsub = onSnapshot(profileRef, (snap) => {
+      if (snap.exists()) {
+        setMyProfile(snap.data() as StudentLearningProfile);
+      } else {
+        setMyProfile(null);
+      }
+    }, (err) => {
+      console.warn("Could not load student profile:", err);
+      setMyProfile(null);
+    });
+    return () => unsub();
+  }, [studentId, sessionId]);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -528,8 +549,9 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.status === "completed") {
-          setInstructorActive(false);
-          setExitCountdown(5); // exit in 5 seconds
+          setCameraActive(false);
+          setSessionEnded(true);
+          setExitCountdown(null);
         } else {
           // Verify instructor present
           const present = data.instructorPresent;
@@ -556,8 +578,9 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
           }
         }
       } else {
-        setInstructorActive(false);
-        setExitCountdown(5);
+        setCameraActive(false);
+        setSessionEnded(true);
+        setExitCountdown(null);
       }
     }, (err) => console.error("Error listening to session heartbeat:", err));
 
@@ -577,8 +600,9 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
             updateDoc(doc(db, "sessions", sessionId, "attendance", attendanceId), {
               status: "absent"
             }).catch(() => {});
-            // Exit classroom view
-            window.location.reload(); // trigger reload to cleanly escape
+            setCameraActive(false);
+            setSessionEnded(true);
+            setExitCountdown(null);
             return 0;
           }
           return prev !== null ? prev - 1 : null;
@@ -648,6 +672,118 @@ export default function StudentClient({ sessionId, sessionTitle, studentId, stud
   };
 
 
+
+  if (sessionEnded) {
+    const avgAtt = myProfile && myProfile.totalSessionsAttended > 0
+      ? Math.round(myProfile.totalAttentionSum / myProfile.totalSessionsAttended)
+      : 0;
+    const avgEng = myProfile && myProfile.totalSessionsAttended > 0
+      ? Math.round(myProfile.totalEngagementSum / myProfile.totalSessionsAttended)
+      : 0;
+
+    const getRiskBadge = (attn: number) => {
+      if (attn >= 75) return { label: 'Excellent Focus', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
+      if (attn >= 50) return { label: 'Moderate Focus', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
+      return { label: 'Struggling Focus', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' };
+    };
+
+    const badge = getRiskBadge(avgAtt);
+
+    return (
+      <div className="max-w-4xl mx-auto p-4 bg-gray-50 min-h-screen text-left font-sans text-gray-800 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-md p-8 max-w-lg w-full border border-gray-200 space-y-6">
+          <div className="text-center space-y-2">
+            <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-semibold border border-emerald-200 uppercase tracking-widest">
+              Session Completed
+            </span>
+            <h2 className="text-xl font-bold text-gray-900 uppercase tracking-tight mt-3">
+              {sessionTitle}
+            </h2>
+            <p className="text-xs text-gray-500 font-semibold uppercase">Your learning feedback is updated</p>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
+            <h3 className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest text-left">Session Telemetry</h3>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm">
+                <p className="text-xs font-mono font-bold text-blue-600">{liveAttention}%</p>
+                <p className="text-[8px] font-mono uppercase text-gray-500">Attention</p>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm">
+                <p className="text-xs font-mono font-bold text-emerald-600">{liveEngagement}%</p>
+                <p className="text-[8px] font-mono uppercase text-gray-500">Engagement</p>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm">
+                <p className="text-xs font-mono font-bold text-purple-600">{liveConfusion}%</p>
+                <p className="text-[8px] font-mono uppercase text-gray-500">Confusion</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <h3 className="font-semibold text-gray-800 text-xs font-mono uppercase tracking-widest flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-indigo-600" />
+                Cumulative Engagement Profile
+              </h3>
+              {myProfile && (
+                <span className={`text-[8.5px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${badge.bg} ${badge.text} ${badge.border}`}>
+                  {badge.label}
+                </span>
+              )}
+            </div>
+
+            {myProfile ? (
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[9px] font-mono">
+                    <span className="text-gray-550">Average Attention</span>
+                    <span className="text-gray-800 font-bold">{avgAtt}%</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-1.5 border border-gray-200">
+                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${avgAtt}%` }} />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[9px] font-mono">
+                    <span className="text-gray-550">Average Engagement</span>
+                    <span className="text-gray-800 font-bold">{avgEng}%</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-1.5 border border-gray-200">
+                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${avgEng}%` }} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-2 text-center text-xs font-mono border-t border-gray-50">
+                  <div>
+                    <p className="text-sm font-bold text-gray-800">{myProfile.totalSessionsAttended}</p>
+                    <p className="text-[8px] uppercase text-gray-500">Sessions Attended</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-red-500">{myProfile.totalAlertsTriggered - myProfile.totalAlertsResolved}</p>
+                    <p className="text-[8px] uppercase text-gray-500">Unresolved Alerts</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-4 text-center space-y-1">
+                <p className="text-[10px] text-gray-400 font-mono uppercase">No cumulative profile stored</p>
+                <p className="text-[9px] text-gray-500 leading-relaxed font-sans max-w-xs mx-auto">This appears to be your first session. A cumulative profile will be created once your session updates sync.</p>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer text-center"
+          >
+            Close & Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-4 bg-gray-50 min-h-screen text-left font-sans text-gray-800">

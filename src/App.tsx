@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { auth, db, handleFirestoreError, OperationType, isFirestoreOffline } from "./firebase";
 import { collection, onSnapshot, doc, getDocs, updateDoc } from "firebase/firestore";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { UserProfile, ClassroomSession } from "./types";
+import { UserProfile, ClassroomSession, StudentLearningProfile } from "./types";
 import Header from "./components/Header";
 import SessionDashboard from "./components/SessionDashboard";
 import StudentClient from "./components/StudentClient";
@@ -96,6 +96,28 @@ export default function App() {
   // Student specific registered courses matching lists
   const [enrolledCourseIds, setEnrolledCourseIds] = useState<string[]>([]);
   const [enrolledCoursesLoading, setEnrolledCoursesLoading] = useState<boolean>(true);
+
+  // Real-time student profile
+  const [myProfile, setMyProfile] = useState<StudentLearningProfile | null>(null);
+
+  useEffect(() => {
+    if (!currentProfile || currentProfile.role !== "student") {
+      setMyProfile(null);
+      return;
+    }
+    const profileRef = doc(db, "studentProfiles", currentProfile.uid);
+    const unsub = onSnapshot(profileRef, (snap) => {
+      if (snap.exists()) {
+        setMyProfile(snap.data() as StudentLearningProfile);
+      } else {
+        setMyProfile(null);
+      }
+    }, (err) => {
+      console.warn("Could not load student profile for dashboard:", err);
+      setMyProfile(null);
+    });
+    return () => unsub();
+  }, [currentProfile]);
 
   // Sync registered users in the database for fast sandboxed impersonation
   useEffect(() => {
@@ -526,9 +548,9 @@ export default function App() {
                   />
                 ) : (
                   // Student View: Select active classroom or join
-                  <div className="max-w-4xl mx-auto px-6 w-full dev-sandbox-container">
+                  <div className="max-w-6xl mx-auto px-6 w-full dev-sandbox-container">
                     {selectedRoom ? (
-                      <div className="space-y-4">
+                      <div className="space-y-4 max-w-4xl mx-auto">
                         <button
                           onClick={handleExitRoomList}
                           className="text-[10px] font-sans uppercase bg-white border border-gray-200 text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-all cursor-pointer shadow-sm mb-2 flex items-center gap-1"
@@ -544,7 +566,8 @@ export default function App() {
                         />
                       </div>
                     ) : (
-                      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md mx-auto space-y-6 text-center">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                        <div className="lg:col-span-1 bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center space-y-6">
                         <span className="bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase">
                           Student Portal
                         </span>
@@ -626,6 +649,101 @@ export default function App() {
                             ))}
                           </div>
                         )}
+                      </div>
+
+                        {/* Cumulative Profile Column */}
+                        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6 text-left">
+                          <div className="border-b border-gray-150 pb-4">
+                            <h3 className="font-sans font-semibold text-gray-900 text-sm uppercase tracking-tight">My Cumulative Engagement Profile</h3>
+                            <p className="text-[10px] text-gray-400 font-mono uppercase tracking-wider">Overall Performance Stats</p>
+                          </div>
+
+                          {myProfile ? (() => {
+                            const avgAtt = myProfile.totalSessionsAttended > 0
+                              ? Math.round(myProfile.totalAttentionSum / myProfile.totalSessionsAttended)
+                              : 0;
+                            const avgEng = myProfile.totalSessionsAttended > 0
+                              ? Math.round(myProfile.totalEngagementSum / myProfile.totalSessionsAttended)
+                              : 0;
+                            const avgConf = myProfile.totalSessionsAttended > 0
+                              ? Math.round(myProfile.totalConfusionSum / myProfile.totalSessionsAttended)
+                              : 0;
+
+                            const getRiskBadge = (attn: number) => {
+                              if (attn >= 75) return { label: 'Excellent Focus', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
+                              if (attn >= 50) return { label: 'Moderate Focus', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
+                              return { label: 'Struggling Focus', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' };
+                            };
+                            const badge = getRiskBadge(avgAtt);
+
+                            return (
+                              <div className="space-y-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-500 uppercase">Risk Level</p>
+                                    <span className={`inline-block mt-1 text-xs font-mono font-bold px-3 py-1 rounded-full border uppercase ${badge.bg} ${badge.text} ${badge.border}`}>
+                                      {badge.label}
+                                    </span>
+                                  </div>
+                                  <div className="text-left sm:text-right">
+                                    <p className="text-xs font-semibold text-gray-550 uppercase">Sessions Attended</p>
+                                    <p className="text-2xl font-bold text-gray-800">{myProfile.totalSessionsAttended}</p>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-baseline text-xs uppercase font-mono font-bold">
+                                      <span className="text-gray-500">Average Attention</span>
+                                      <span className="text-blue-600">{avgAtt}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200 shadow-inner">
+                                      <div className="bg-blue-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${avgAtt}%` }} />
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-baseline text-xs uppercase font-mono font-bold">
+                                      <span className="text-gray-500">Average Engagement</span>
+                                      <span className="text-emerald-600">{avgEng}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200 shadow-inner">
+                                      <div className="bg-emerald-600 h-1.5 rounded-full transition-all duration-500" style={{ width: `${avgEng}%` }} />
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-baseline text-xs uppercase font-mono font-bold">
+                                      <span className="text-gray-500">Average Confusion</span>
+                                      <span className="text-purple-600">{avgConf}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 rounded-full h-2 border border-gray-200 shadow-inner">
+                                      <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${avgConf}%` }} />
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 text-center text-xs font-mono">
+                                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                                    <p className="text-lg font-bold text-amber-600">{myProfile.totalAlertsTriggered}</p>
+                                    <p className="text-[8px] uppercase text-gray-500">Alerts Flagged</p>
+                                  </div>
+                                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                                    <p className="text-lg font-bold text-emerald-600">{myProfile.totalAlertsResolved}</p>
+                                    <p className="text-[8px] uppercase text-gray-500">Alerts Resolved</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })() : (
+                            <div className="py-8 text-center space-y-2 border border-dashed border-gray-200 rounded-xl bg-gray-50 p-6">
+                              <p className="text-xs font-mono uppercase text-gray-400">No telemetry recorded yet</p>
+                              <p className="text-[10px] text-gray-500 leading-relaxed font-sans max-w-sm mx-auto">
+                                You do not have an active cumulative profile on record. Join an active classroom session and sync gaze telemetry to start collecting statistics.
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

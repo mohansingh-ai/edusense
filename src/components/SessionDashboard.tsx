@@ -343,7 +343,7 @@ export default function SessionDashboard({ instructorId, instructorName }: Sessi
         ? (attendance.length > 0 && ratioLowAtt >= (thresholdValue / 100))
         : (lowAttCount >= thresholdValue);
 
-      const studentCommentsList = comments.slice(-10).map(c => c.text);
+      const studentCommentsList: string[] = [];
 
       const response = await fetch("/api/teaching-strategy", {
         method: "POST",

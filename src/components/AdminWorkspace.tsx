@@ -7,7 +7,9 @@ import {
   deleteDoc,
   onSnapshot,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  where
 } from "firebase/firestore";
 import { UserProfile, StudentLearningProfile } from "../types";
 import {
@@ -235,22 +237,36 @@ export default function AdminWorkspace() {
     if (!userName.trim() || !userEmail.trim()) return;
 
     setAddingUser(true);
-    const mockUid = `${userRole}_${Date.now()}`;
-    const userPayload: UserProfile = {
-      uid: mockUid,
-      name: userName.trim(),
-      email: userEmail.trim().toLowerCase(),
-      role: userRole,
-      createdAt: serverTimestamp()
-    };
+    const targetEmail = userEmail.trim().toLowerCase();
 
     try {
+      // Check for pre-existing email in the system (unique email constraint)
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", targetEmail));
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        const existingUser = snap.docs[0].data() as UserProfile;
+        showNotif(`Registration failed: '${targetEmail}' is already registered as a ${existingUser.role}.`, "error");
+        setAddingUser(false);
+        return;
+      }
+
+      const mockUid = `${userRole}_${Date.now()}`;
+      const userPayload: UserProfile = {
+        uid: mockUid,
+        name: userName.trim(),
+        email: targetEmail,
+        role: userRole,
+        createdAt: serverTimestamp()
+      };
+
       await setDoc(doc(db, "users", mockUid), userPayload);
       showNotif(`Successfully registered virtual ${userRole}: ${userName}`);
       setUserName("");
       setUserEmail("");
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `users/${mockUid}`);
+      handleFirestoreError(err, OperationType.WRITE, `users/email_check`);
       showNotif("Failed to register user to database.", "error");
     } finally {
       setAddingUser(false);
