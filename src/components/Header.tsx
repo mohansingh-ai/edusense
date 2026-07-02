@@ -361,10 +361,6 @@ export default function Header({ onProfileLoaded, currentProfile, currentTab, se
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase font-sans font-semibold text-amber-600 bg-amber-50 rounded-full py-1 px-3 border border-amber-200">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Sandbox Enclosure</span>
-            </div>
             <button
               onClick={handleSignIn}
               id="signin-btn"

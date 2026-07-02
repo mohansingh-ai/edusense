@@ -854,15 +854,13 @@ export default function AdminWorkspace() {
                             <span className="text-[8.5px] bg-blue-50 text-blue-650 border border-blue-150 font-mono px-2 py-0.5 rounded-full font-bold">
                               {s.uid}
                             </span>
-                            {!s.uid.startsWith("student_") && (
-                              <button
-                                onClick={() => handleDeleteUser(s.uid)}
-                                className="p-1 text-gray-400 hover:text-red-655 hover:bg-gray-100 rounded transition-colors cursor-pointer"
-                                title="Delete Student Profile"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleDeleteUser(s.uid)}
+                              className="p-1 text-gray-400 hover:text-red-655 hover:bg-gray-100 rounded transition-colors cursor-pointer"
+                              title="Delete Student Profile"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </div>
                       );
@@ -888,15 +886,13 @@ export default function AdminWorkspace() {
                           <span className="text-[8.5px] bg-emerald-50 text-emerald-650 border border-emerald-150 font-mono px-2 py-0.5 rounded-full font-bold">
                             {i.uid}
                           </span>
-                          {!i.uid.startsWith("instructor_") && (
-                            <button
-                              onClick={() => handleDeleteUser(i.uid)}
-                              className="p-1 text-gray-400 hover:text-red-655 hover:bg-gray-100 rounded transition-colors cursor-pointer"
-                              title="Delete Instructor Profile"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleDeleteUser(i.uid)}
+                            className="p-1 text-gray-400 hover:text-red-655 hover:bg-gray-100 rounded transition-colors cursor-pointer"
+                            title="Delete Instructor Profile"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     ))

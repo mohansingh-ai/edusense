@@ -457,7 +457,7 @@ export default function App() {
                     <form onSubmit={handleAdminLogin} className="space-y-4">
                       <div className="space-y-1 text-center">
                         <h4 className="text-[10px] font-mono text-gray-700 uppercase tracking-widest font-bold">Administrative Control Access</h4>
-                        <p className="text-[9px] text-gray-500 font-sans">Enter Campus Passcode (<span className="text-blue-600 font-mono font-bold">admin123</span>)</p>
+                        <p className="text-[9px] text-gray-500 font-sans uppercase tracking-wider font-semibold">Enter Campus Passcode</p>
                       </div>
 
                       <div className="flex gap-2">
